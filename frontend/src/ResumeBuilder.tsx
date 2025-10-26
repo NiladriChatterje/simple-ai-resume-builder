@@ -139,6 +139,13 @@ export default function ResumeBuilder() {
     const [loading, setLoading] = useState(false)
     const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
 
+    const [padding, setPadding] = useState({
+        top: 40,
+        right: 40,
+        bottom: 40,
+        left: 40
+    })
+
     const editor = useEditor({
         extensions: [
             StarterKit,
@@ -738,6 +745,56 @@ export default function ResumeBuilder() {
                     </button>
                 </div>
 
+                <CollapsibleSection title="Page Settings">
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                        <div>
+                            <label>Padding (px)</label>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
+                                <div>
+                                    <label style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Top</label>
+                                    <input
+                                        type="number"
+                                        value={padding.top}
+                                        onChange={(e) => setPadding(p => ({ ...p, top: Number(e.target.value) }))}
+                                        min="0"
+                                        max="200"
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Bottom</label>
+                                    <input
+                                        type="number"
+                                        value={padding.bottom}
+                                        onChange={(e) => setPadding(p => ({ ...p, bottom: Number(e.target.value) }))}
+                                        min="0"
+                                        max="200"
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Left</label>
+                                    <input
+                                        type="number"
+                                        value={padding.left}
+                                        onChange={(e) => setPadding(p => ({ ...p, left: Number(e.target.value) }))}
+                                        min="0"
+                                        max="200"
+                                    />
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>Right</label>
+                                    <input
+                                        type="number"
+                                        value={padding.right}
+                                        onChange={(e) => setPadding(p => ({ ...p, right: Number(e.target.value) }))}
+                                        min="0"
+                                        max="200"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </CollapsibleSection>
+
                 <CollapsibleSection title="Contact Information">
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                         <div>
@@ -1246,9 +1303,100 @@ export default function ResumeBuilder() {
                     borderRadius: '0.5rem',
                     flex: 1,
                     overflowY: 'auto',
-                    backgroundColor: 'white'
+                    backgroundColor: '#f5f5f5',
+                    position: 'relative'
                 }}>
-                    <EditorContent editor={editor} />
+                    {/* Horizontal Ruler */}
+                    <div style={{
+                        position: 'sticky',
+                        top: 0,
+                        left: 0,
+                        right: 0,
+                        height: '30px',
+                        backgroundColor: '#e8e8e8',
+                        borderBottom: '1px solid var(--border)',
+                        display: 'flex',
+                        alignItems: 'flex-end',
+                        zIndex: 100
+                    }}>
+                        {Array.from({ length: 21 }).map((_, i) => {
+                            const position = i * 50
+                            return (
+                                <div key={i} style={{
+                                    position: 'absolute',
+                                    left: `${position}px`,
+                                    height: i % 2 === 0 ? '12px' : '8px',
+                                    width: '1px',
+                                    backgroundColor: '#666',
+                                    bottom: 0
+                                }}>
+                                    {i % 2 === 0 && (
+                                        <span style={{
+                                            position: 'absolute',
+                                            top: '2px',
+                                            left: '3px',
+                                            fontSize: '9px',
+                                            color: '#666'
+                                        }}>
+                                            {position}
+                                        </span>
+                                    )}
+                                </div>
+                            )
+                        })}
+                    </div>
+
+                    {/* Vertical Ruler */}
+                    <div style={{
+                        position: 'absolute',
+                        top: '30px',
+                        left: 0,
+                        bottom: 0,
+                        width: '30px',
+                        backgroundColor: '#e8e8e8',
+                        borderRight: '1px solid var(--border)',
+                        zIndex: 99
+                    }}>
+                        {Array.from({ length: 30 }).map((_, i) => {
+                            const position = i * 50
+                            return (
+                                <div key={i} style={{
+                                    position: 'absolute',
+                                    top: `${position}px`,
+                                    width: i % 2 === 0 ? '12px' : '8px',
+                                    height: '1px',
+                                    backgroundColor: '#666',
+                                    right: 0
+                                }}>
+                                    {i % 2 === 0 && (
+                                        <span style={{
+                                            position: 'absolute',
+                                            left: '2px',
+                                            top: '3px',
+                                            fontSize: '9px',
+                                            color: '#666',
+                                            transform: 'rotate(-90deg)',
+                                            transformOrigin: 'left top'
+                                        }}>
+                                            {position}
+                                        </span>
+                                    )}
+                                </div>
+                            )
+                        })}
+                    </div>
+
+                    {/* Editor Content with Padding */}
+                    <div style={{
+                        marginLeft: '30px',
+                        marginTop: '30px',
+                        padding: `${padding.top}px ${padding.right}px ${padding.bottom}px ${padding.left}px`,
+                        backgroundColor: 'white',
+                        minHeight: 'calc(100% - 30px)',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                    }}>
+                        <EditorContent editor={editor} />
+                    </div>
                 </div>
             </div>
         </div>
