@@ -35,6 +35,7 @@ app.get('/', (_req, res) => res.send('Resume Builder backend running'))
 app.post('/api/generate', async (req, res) => {
     try {
         const { profile, instructions } = req.body
+        console.log('Received payload:', JSON.stringify(req.body, null, 2))
         const profileText = typeof profile === 'string' ? profile : JSON.stringify(profile, null, 2)
 
         const result = await chain.call({ profile: profileText, instructions: instructions || '' })
