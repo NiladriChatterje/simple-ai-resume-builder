@@ -462,13 +462,30 @@ export default function ResumeBuilder() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ text, context }),
             })
+
+            if (!resp.ok) {
+                const errorText = await resp.text()
+                console.error('Server error:', errorText)
+                alert(`Enhancement failed: Server returned ${resp.status}`)
+                return
+            }
+
+            const contentType = resp.headers.get('content-type')
+            if (!contentType || !contentType.includes('application/json')) {
+                const textResponse = await resp.text()
+                console.error('Non-JSON response:', textResponse)
+                alert('Enhancement failed: Server returned invalid response format')
+                return
+            }
+
             const data = await resp.json()
             if (data.success && data.text) {
                 callback(data.text)
             } else {
-                alert('Enhancement failed: ' + (data.error || 'unknown'))
+                alert('Enhancement failed: ' + (data.error || 'No enhanced text returned'))
             }
         } catch (e: any) {
+            console.error('Enhancement error:', e)
             alert('Enhancement request failed: ' + (e.message || String(e)))
         } finally {
             setEnhancing(null)
@@ -904,7 +921,10 @@ export default function ResumeBuilder() {
                             style={{ paddingRight: '3rem' }}
                         />
                         <button
-                            onClick={() => enhanceText(profile.summary, 'professional summary', (enhanced) => updateField('summary', enhanced))}
+                            onClick={() => {
+                                setEnhancing('professional summary')
+                                enhanceText(profile.summary, 'professional summary', (enhanced) => updateField('summary', enhanced))
+                            }}
                             disabled={!profile.summary.trim() || enhancing === 'professional summary'}
                             className="secondary icon-only"
                             style={{

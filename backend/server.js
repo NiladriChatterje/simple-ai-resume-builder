@@ -73,6 +73,11 @@ app.post('/api/generate', async (req, res) => {
 app.post('/api/enhance-text', async (req, res) => {
     try {
         const { text, context } = req.body
+
+        if (!text || !text.trim()) {
+            return res.status(400).json({ success: false, error: 'Text is required' })
+        }
+
         console.log('Enhancing text:', text)
 
         const enhancePrompt = new PromptTemplate({
@@ -90,17 +95,26 @@ Requirements:
 5. Focus on impact and results
 6. Use industry-standard terminology
 
-Return ONLY the enhanced text without any explanations or additional commentary.`
+Return ONLY the enhanced text without any explanations, additional commentary, or formatting markers.`
         })
 
         const enhanceChain = new LLMChain({ llm, prompt: enhancePrompt })
         const result = await enhanceChain.call({ text, context: context || 'resume description' })
 
-        const enhancedText = result?.text ?? result?.output_text ?? text
-        res.json({ success: true, text: enhancedText.trim() })
+        let enhancedText = result?.text ?? result?.output_text ?? text
+
+        // Clean up the response - remove any markdown code blocks or extra formatting
+        enhancedText = enhancedText.trim()
+            .replace(/^```.*\n?/gm, '')  // Remove code block markers
+            .replace(/```$/gm, '')         // Remove closing code blocks
+            .replace(/^\s*["']|["']\s*$/g, '')  // Remove surrounding quotes
+
+        console.log('Enhanced text result:', enhancedText)
+
+        res.json({ success: true, text: enhancedText })
     } catch (err) {
         console.error('enhance-text error', err)
-        res.status(500).json({ success: false, error: String(err) })
+        res.status(500).json({ success: false, error: String(err.message || err) })
     }
 })
 
