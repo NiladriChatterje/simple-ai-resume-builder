@@ -70,4 +70,38 @@ app.post('/api/generate', async (req, res) => {
     }
 })
 
+app.post('/api/enhance-text', async (req, res) => {
+    try {
+        const { text, context } = req.body
+        console.log('Enhancing text:', text)
+
+        const enhancePrompt = new PromptTemplate({
+            inputVariables: ['text', 'context'],
+            template: `You are a professional resume writer. Transform the following text into a professional, concise, and impactful statement suitable for a resume.
+
+Context: {context}
+Original text: {text}
+
+Requirements:
+1. Make it professional and achievement-oriented
+2. Use strong action verbs
+3. Keep it concise (1-3 sentences)
+4. Quantify achievements when possible
+5. Focus on impact and results
+6. Use industry-standard terminology
+
+Return ONLY the enhanced text without any explanations or additional commentary.`
+        })
+
+        const enhanceChain = new LLMChain({ llm, prompt: enhancePrompt })
+        const result = await enhanceChain.call({ text, context: context || 'resume description' })
+
+        const enhancedText = result?.text ?? result?.output_text ?? text
+        res.json({ success: true, text: enhancedText.trim() })
+    } catch (err) {
+        console.error('enhance-text error', err)
+        res.status(500).json({ success: false, error: String(err) })
+    }
+})
+
 app.listen(PORT, () => console.log(`Backend listening on http://localhost:${PORT}`))

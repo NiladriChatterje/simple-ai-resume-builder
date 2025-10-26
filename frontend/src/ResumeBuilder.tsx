@@ -138,6 +138,7 @@ export default function ResumeBuilder() {
     const [instructions, setInstructions] = useState('Create a clear, concise, ATS-friendly resume tailored to the target job. Highlight achievements and use action verbs.')
     const [generated, setGenerated] = useState('')
     const [loading, setLoading] = useState(false)
+    const [enhancing, setEnhancing] = useState<string | null>(null)
     const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
 
     const [padding, setPadding] = useState({
@@ -446,6 +447,31 @@ export default function ResumeBuilder() {
                 languages: []
             })
             localStorage.removeItem('resumeProfile')
+        }
+    }
+
+    async function enhanceText(text: string, context: string, callback: (enhancedText: string) => void) {
+        if (!text.trim()) {
+            setEnhancing(null)
+            return
+        }
+
+        try {
+            const resp = await fetch(`${backendUrl}/api/enhance-text`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ text, context }),
+            })
+            const data = await resp.json()
+            if (data.success && data.text) {
+                callback(data.text)
+            } else {
+                alert('Enhancement failed: ' + (data.error || 'unknown'))
+            }
+        } catch (e: any) {
+            alert('Enhancement request failed: ' + (e.message || String(e)))
+        } finally {
+            setEnhancing(null)
         }
     }
 
@@ -869,12 +895,32 @@ export default function ResumeBuilder() {
                 </CollapsibleSection>
 
                 <CollapsibleSection title="Professional Summary">
-                    <textarea
-                        value={profile.summary}
-                        onChange={(e) => updateField('summary', e.target.value)}
-                        rows={4}
-                        placeholder="Brief overview of your professional background, key skills, and career objectives..."
-                    />
+                    <div style={{ position: 'relative' }}>
+                        <textarea
+                            value={profile.summary}
+                            onChange={(e) => updateField('summary', e.target.value)}
+                            rows={4}
+                            placeholder="Brief overview of your professional background, key skills, and career objectives..."
+                            style={{ paddingRight: '3rem' }}
+                        />
+                        <button
+                            onClick={() => enhanceText(profile.summary, 'professional summary', (enhanced) => updateField('summary', enhanced))}
+                            disabled={!profile.summary.trim() || enhancing === 'professional summary'}
+                            className="secondary icon-only"
+                            style={{
+                                position: 'absolute',
+                                right: '0.5rem',
+                                top: '0.5rem',
+                                backgroundColor: 'var(--primary-color)',
+                                color: 'white',
+                                minWidth: '2rem',
+                                height: '2rem'
+                            }}
+                            title="Enhance with AI"
+                        >
+                            {enhancing === 'professional summary' ? '...' : <Sparkles size={16} />}
+                        </button>
+                    </div>
                 </CollapsibleSection>
 
                 <CollapsibleSection title="Work Experience">
@@ -935,12 +981,36 @@ export default function ResumeBuilder() {
                                     />
                                     <span style={{ fontSize: '0.875rem' }}>Currently working here</span>
                                 </label>
-                                <textarea
-                                    value={exp.description}
-                                    onChange={(e) => updateExperience(exp.id, 'description', e.target.value)}
-                                    rows={3}
-                                    placeholder="Key responsibilities and achievements..."
-                                />
+                                <div style={{ position: 'relative' }}>
+                                    <textarea
+                                        value={exp.description}
+                                        onChange={(e) => updateExperience(exp.id, 'description', e.target.value)}
+                                        rows={3}
+                                        placeholder="Key responsibilities and achievements..."
+                                        style={{ paddingRight: '3rem' }}
+                                    />
+                                    <button
+                                        onClick={() => {
+                                            const context = `work experience at ${exp.company || 'company'}`
+                                            setEnhancing(`exp-${exp.id}`)
+                                            enhanceText(exp.description, context, (enhanced) => updateExperience(exp.id, 'description', enhanced))
+                                        }}
+                                        disabled={!exp.description.trim() || enhancing === `exp-${exp.id}`}
+                                        className="secondary icon-only"
+                                        style={{
+                                            position: 'absolute',
+                                            right: '0.5rem',
+                                            top: '0.5rem',
+                                            backgroundColor: 'var(--primary-color)',
+                                            color: 'white',
+                                            minWidth: '2rem',
+                                            height: '2rem'
+                                        }}
+                                        title="Enhance with AI"
+                                    >
+                                        {enhancing === `exp-${exp.id}` ? '...' : <Sparkles size={16} />}
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     ))}
@@ -1044,12 +1114,36 @@ export default function ResumeBuilder() {
                                     onChange={(e) => updateProject(proj.id, 'name', e.target.value)}
                                     placeholder="Project Name"
                                 />
-                                <textarea
-                                    value={proj.description}
-                                    onChange={(e) => updateProject(proj.id, 'description', e.target.value)}
-                                    rows={2}
-                                    placeholder="Project description and your role..."
-                                />
+                                <div style={{ position: 'relative' }}>
+                                    <textarea
+                                        value={proj.description}
+                                        onChange={(e) => updateProject(proj.id, 'description', e.target.value)}
+                                        rows={2}
+                                        placeholder="Project description and your role..."
+                                        style={{ paddingRight: '3rem' }}
+                                    />
+                                    <button
+                                        onClick={() => {
+                                            const context = `project ${proj.name || 'description'}`
+                                            setEnhancing(`proj-${proj.id}`)
+                                            enhanceText(proj.description, context, (enhanced) => updateProject(proj.id, 'description', enhanced))
+                                        }}
+                                        disabled={!proj.description.trim() || enhancing === `proj-${proj.id}`}
+                                        className="secondary icon-only"
+                                        style={{
+                                            position: 'absolute',
+                                            right: '0.5rem',
+                                            top: '0.5rem',
+                                            backgroundColor: 'var(--primary-color)',
+                                            color: 'white',
+                                            minWidth: '2rem',
+                                            height: '2rem'
+                                        }}
+                                        title="Enhance with AI"
+                                    >
+                                        {enhancing === `proj-${proj.id}` ? '...' : <Sparkles size={16} />}
+                                    </button>
+                                </div>
                                 <input
                                     value={proj.technologies}
                                     onChange={(e) => updateProject(proj.id, 'technologies', e.target.value)}
