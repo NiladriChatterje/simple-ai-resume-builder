@@ -11,11 +11,12 @@ import {
     Bold, Italic, Underline as UnderlineIcon, Heading1, Heading2,
     List, AlignLeft, AlignCenter, AlignRight, Download, Save,
     Upload, Plus, Trash2, ChevronDown, ChevronUp, FileText,
-    Sparkles, RotateCcw, ImageIcon, Type
+    Sparkles, RotateCcw, ImageIcon, Type, Eye, X
 } from 'lucide-react'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 import { marked } from 'marked'
+import MarkdownIt from 'markdown-it'
 
 type Experience = {
     id: string
@@ -139,6 +140,7 @@ export default function ResumeBuilder() {
     const [generated, setGenerated] = useState('')
     const [loading, setLoading] = useState(false)
     const [enhancing, setEnhancing] = useState<string | null>(null)
+    const [showPreview, setShowPreview] = useState(false)
     const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001'
 
     const [padding, setPadding] = useState({
@@ -759,6 +761,112 @@ export default function ResumeBuilder() {
         }).run()
     }
 
+    const renderMarkdownPreview = () => {
+        const md = new MarkdownIt({
+            html: true,
+            linkify: true,
+            typographer: true
+        })
+        return md.render(generated)
+    }
+
+    const downloadMarkdownHTML = () => {
+        const htmlContent = `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>${profile.fullName || 'Resume'}</title>
+    <style>
+        body {
+            font-family: 'Inter', 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #0f172a;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 2rem;
+            background-color: #ffffff;
+        }
+        h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            line-height: 1.2;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 0.5rem;
+        }
+        h2 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            margin-top: 1.25rem;
+            margin-bottom: 0.625rem;
+            line-height: 1.3;
+        }
+        h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+            line-height: 1.4;
+        }
+        p {
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        strong {
+            font-weight: 600;
+        }
+        ul, ol {
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+            padding-left: 1.5rem;
+        }
+        li {
+            margin-top: 0.25rem;
+            margin-bottom: 0.25rem;
+        }
+        a {
+            color: #2563eb;
+            text-decoration: underline;
+        }
+        code {
+            background-color: #f1f5f9;
+            padding: 0.125rem 0.375rem;
+            border-radius: 0.25rem;
+            font-size: 0.875em;
+        }
+        pre {
+            background-color: #f1f5f9;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+        }
+        blockquote {
+            border-left: 3px solid #2563eb;
+            padding-left: 1rem;
+            margin-left: 0;
+            color: #475569;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+${renderMarkdownPreview()}
+</body>
+</html>
+        `
+
+        const blob = new Blob([htmlContent], { type: 'text/html' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `${profile.fullName || 'resume'}-preview.html`
+        a.click()
+        URL.revokeObjectURL(url)
+    }
+
     return (
         <div style={{
             display: 'grid',
@@ -1313,6 +1421,10 @@ export default function ResumeBuilder() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                     <h2 style={{ margin: 0 }}>Resume Preview</h2>
                     <div style={{ display: 'flex', gap: '0.5rem' }}>
+                        <button onClick={() => setShowPreview(true)} disabled={!generated} className="secondary">
+                            <Eye size={16} />
+                            Preview
+                        </button>
                         <button onClick={() => downloadResume('html')} disabled={!editor} className="secondary">
                             <Download size={16} />
                             HTML
@@ -1532,6 +1644,71 @@ export default function ResumeBuilder() {
                     </div>
                 </div>
             </div>
+
+            {/* Preview Modal */}
+            {showPreview && (
+                <div style={{
+                    position: 'fixed',
+                    top: 0,
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    backgroundColor: 'rgba(0, 0, 0, 0.75)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    zIndex: 9999,
+                    padding: '2rem'
+                }}>
+                    <div style={{
+                        backgroundColor: 'var(--surface)',
+                        borderRadius: '1rem',
+                        maxWidth: '900px',
+                        width: '100%',
+                        maxHeight: '90vh',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+                    }}>
+                        {/* Modal Header */}
+                        <div style={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'center',
+                            padding: '1.5rem',
+                            borderBottom: '1px solid var(--border)'
+                        }}>
+                            <h2 style={{ margin: 0, fontSize: '1.5rem' }}>Markdown Preview</h2>
+                            <div style={{ display: 'flex', gap: '0.5rem' }}>
+                                <button onClick={downloadMarkdownHTML} className="secondary">
+                                    <Download size={16} />
+                                    Download HTML
+                                </button>
+                                <button onClick={() => setShowPreview(false)} className="secondary icon-only">
+                                    <X size={20} />
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Modal Content */}
+                        <div style={{
+                            flex: 1,
+                            overflow: 'auto',
+                            padding: '2rem',
+                            backgroundColor: '#ffffff'
+                        }}>
+                            <div
+                                className="markdown-preview"
+                                dangerouslySetInnerHTML={{ __html: renderMarkdownPreview() }}
+                                style={{
+                                    maxWidth: '800px',
+                                    margin: '0 auto'
+                                }}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
