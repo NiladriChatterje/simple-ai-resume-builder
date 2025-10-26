@@ -1,0 +1,14 @@
+{
+  "name": "resume-builder-backend",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "start": "node --env-file=.env server.js"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "langchain": "^0.0.202",
+    "node-fetch": "^2.6.7"
+  }
+}
