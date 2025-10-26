@@ -1557,9 +1557,9 @@ ${renderMarkdownPreview()}
                         top: 0,
                         left: 0,
                         right: 0,
-                        height: '30px',
-                        backgroundColor: '#e8e8e8',
-                        borderBottom: '1px solid var(--border)',
+                        height: '25px',
+                        backgroundColor: '#f8f9fa',
+                        borderBottom: '1px solid #d1d5db',
                         display: 'flex',
                         alignItems: 'flex-end',
                         zIndex: 100
@@ -1570,18 +1570,19 @@ ${renderMarkdownPreview()}
                                 <div key={i} style={{
                                     position: 'absolute',
                                     left: `${position}px`,
-                                    height: i % 2 === 0 ? '12px' : '8px',
+                                    height: i % 2 === 0 ? '8px' : '5px',
                                     width: '1px',
-                                    backgroundColor: '#666',
+                                    backgroundColor: '#94a3b8',
                                     bottom: 0
                                 }}>
                                     {i % 2 === 0 && (
                                         <span style={{
                                             position: 'absolute',
-                                            top: '2px',
+                                            top: '1px',
                                             left: '3px',
-                                            fontSize: '9px',
-                                            color: '#666'
+                                            fontSize: '8px',
+                                            color: '#64748b',
+                                            fontWeight: '500'
                                         }}>
                                             {position}
                                         </span>
@@ -1594,12 +1595,12 @@ ${renderMarkdownPreview()}
                     {/* Vertical Ruler */}
                     <div style={{
                         position: 'absolute',
-                        top: '30px',
+                        top: '25px',
                         left: 0,
                         bottom: 0,
-                        width: '30px',
-                        backgroundColor: '#e8e8e8',
-                        borderRight: '1px solid var(--border)',
+                        width: '25px',
+                        backgroundColor: '#f8f9fa',
+                        borderRight: '1px solid #d1d5db',
                         zIndex: 99
                     }}>
                         {Array.from({ length: 30 }).map((_, i) => {
@@ -1608,18 +1609,19 @@ ${renderMarkdownPreview()}
                                 <div key={i} style={{
                                     position: 'absolute',
                                     top: `${position}px`,
-                                    width: i % 2 === 0 ? '12px' : '8px',
+                                    width: i % 2 === 0 ? '8px' : '5px',
                                     height: '1px',
-                                    backgroundColor: '#666',
+                                    backgroundColor: '#94a3b8',
                                     right: 0
                                 }}>
                                     {i % 2 === 0 && (
                                         <span style={{
                                             position: 'absolute',
-                                            left: '2px',
+                                            left: '1px',
                                             top: '3px',
-                                            fontSize: '9px',
-                                            color: '#666',
+                                            fontSize: '8px',
+                                            color: '#64748b',
+                                            fontWeight: '500',
                                             transform: 'rotate(-90deg)',
                                             transformOrigin: 'left top'
                                         }}>
@@ -1633,14 +1635,18 @@ ${renderMarkdownPreview()}
 
                     {/* Editor Content with Padding */}
                     <div style={{
-                        marginLeft: '30px',
-                        marginTop: '30px',
-                        padding: `${padding.top}px ${padding.right}px ${padding.bottom}px ${padding.left}px`,
+                        marginLeft: '25px',
+                        marginTop: '25px',
                         backgroundColor: 'white',
-                        minHeight: 'calc(100% - 30px)',
+                        minHeight: 'calc(100% - 25px)',
                         boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
                     }}>
-                        <EditorContent editor={editor} />
+                        <div style={{
+                            padding: '15px 15px 15px 35px',
+                            minHeight: '100%'
+                        }}>
+                            <EditorContent editor={editor} />
+                        </div>
                     </div>
                 </div>
             </div>

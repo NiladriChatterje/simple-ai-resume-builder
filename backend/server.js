@@ -26,7 +26,13 @@ const prompt = new PromptTemplate({
 Profile Data:
 {profile}
 
-IMPORTANT FORMATTING REQUIREMENTS:
+CRITICAL RULES:
+1. Generate ONLY the resume content - NO notes, conclusions, explanations, or meta-commentary
+2. Do NOT add phrases like "Note:", "Conclusion:", "Here is", or any other explanatory text
+3. Start directly with the person's name as the main header
+4. End with the last section of the resume - do NOT add any closing remarks
+
+FORMATTING REQUIREMENTS:
 1. Use proper markdown formatting with headers (# for main title, ## for sections, ### for subsections)
 2. Use **bold** for important items like job titles, company names, and key achievements
 3. Use bullet points (- ) for listing responsibilities and achievements
@@ -46,7 +52,7 @@ REQUIRED SECTIONS (if data is available):
 - ## Certifications (if applicable)
 - ## Languages (if applicable)
 
-Generate a clean, professional, well-formatted resume in markdown that will render beautifully with proper styling.`,
+Generate ONLY the resume content - nothing else.`,
 })
 
 const chain = new LLMChain({ llm, prompt })
