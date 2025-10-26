@@ -6,14 +6,16 @@ import TextAlign from '@tiptap/extension-text-align'
 import { TextStyle } from '@tiptap/extension-text-style'
 import { Color } from '@tiptap/extension-color'
 import Image from '@tiptap/extension-image'
+import { DraggableTextBox } from './extensions/DraggableTextBox'
 import {
     Bold, Italic, Underline as UnderlineIcon, Heading1, Heading2,
     List, AlignLeft, AlignCenter, AlignRight, Download, Save,
     Upload, Plus, Trash2, ChevronDown, ChevronUp, FileText,
-    Sparkles, RotateCcw, ImageIcon
+    Sparkles, RotateCcw, ImageIcon, Type
 } from 'lucide-react'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
+import { marked } from 'marked'
 
 type Experience = {
     id: string
@@ -100,20 +102,19 @@ function CollapsibleSection({ title, children, defaultOpen = true }: Collapsible
 }
 
 function markdownToHtml(markdown: string): string {
-    let html = markdown
-        .replace(/^### (.*$)/gim, '<h3>$1</h3>')
-        .replace(/^## (.*$)/gim, '<h2>$1</h2>')
-        .replace(/^# (.*$)/gim, '<h1>$1</h1>')
-        .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*(.*?)\*/g, '<em>$1</em>')
-        .replace(/\n\n/g, '</p><p>')
-        .replace(/\n/g, '<br/>')
-        .replace(/^- (.*$)/gim, '<li>$1</li>')
+    // Configure marked options for better rendering
+    marked.setOptions({
+        breaks: true,
+        gfm: true
+    })
 
-    html = html.replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>')
-    html = `<p>${html}</p>`
-
-    return html
+    try {
+        const html = marked.parse(markdown) as string
+        return html
+    } catch (error) {
+        console.error('Markdown parsing error:', error)
+        return `<p>${markdown}</p>`
+    }
 }
 
 export default function ResumeBuilder() {
@@ -153,6 +154,7 @@ export default function ResumeBuilder() {
             TextAlign.configure({ types: ['heading', 'paragraph'] }),
             TextStyle,
             Color,
+            DraggableTextBox,
             Image.configure({
                 inline: true,
                 allowBase64: true,
@@ -703,6 +705,15 @@ export default function ResumeBuilder() {
             }
         }
         input.click()
+    }
+
+    const addTextBox = () => {
+        editor?.chain().focus().setDraggableTextBox({
+            x: 100,
+            y: 100,
+            width: 200,
+            height: 100
+        }).run()
     }
 
     return (
@@ -1270,6 +1281,14 @@ export default function ResumeBuilder() {
                         title="Insert Image"
                     >
                         <ImageIcon size={18} />
+                    </button>
+                    <button
+                        onClick={addTextBox}
+                        disabled={!editor}
+                        className="secondary icon-only"
+                        title="Add Text Box"
+                    >
+                        <Type size={18} />
                     </button>
                     <div style={{ width: '1px', backgroundColor: 'var(--border)', margin: '0 0.25rem' }} />
                     <button

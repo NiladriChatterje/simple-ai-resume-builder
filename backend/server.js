@@ -19,13 +19,34 @@ const llm = new Ollama({ baseUrl: OLLAMA_URL, model: OLLAMA_MODEL })
 
 const prompt = new PromptTemplate({
     inputVariables: ['profile', 'instructions'],
-    template: `You are professional resume builder.
+    template: `You are a professional resume builder with expertise in creating visually appealing, ATS-friendly resumes.
+
 {instructions}
 
-Profile:
+Profile Data:
 {profile}
 
-Please produce a clean, ATS-friendly resume in markdown. Use sections for Summary, Experience, Skills, and Education. Prioritize clarity and achievements.`,
+IMPORTANT FORMATTING REQUIREMENTS:
+1. Use proper markdown formatting with headers (# for main title, ## for sections, ### for subsections)
+2. Use **bold** for important items like job titles, company names, and key achievements
+3. Use bullet points (- ) for listing responsibilities and achievements
+4. Include appropriate spacing between sections for readability
+5. Format dates clearly (e.g., "Jan 2020 - Present" or "Jan 2020 - Dec 2022")
+6. Use *italics* for emphasis where appropriate
+7. Create a professional structure with clear sections
+
+REQUIRED SECTIONS (if data is available):
+- # [Full Name] (as main header)
+- Contact information (email, phone, location, LinkedIn, GitHub, website)
+- ## Professional Summary
+- ## Work Experience (with company, position, dates, and bullet points for achievements)
+- ## Education (with institution, degree, dates)
+- ## Skills (organized by category if possible)
+- ## Projects (if applicable)
+- ## Certifications (if applicable)
+- ## Languages (if applicable)
+
+Generate a clean, professional, well-formatted resume in markdown that will render beautifully with proper styling.`,
 })
 
 const chain = new LLMChain({ llm, prompt })
