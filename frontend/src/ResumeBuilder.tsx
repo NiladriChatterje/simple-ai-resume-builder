@@ -5,11 +5,12 @@ import Underline from '@tiptap/extension-underline'
 import TextAlign from '@tiptap/extension-text-align'
 import { TextStyle } from '@tiptap/extension-text-style'
 import { Color } from '@tiptap/extension-color'
+import Image from '@tiptap/extension-image'
 import {
     Bold, Italic, Underline as UnderlineIcon, Heading1, Heading2,
     List, AlignLeft, AlignCenter, AlignRight, Download, Save,
     Upload, Plus, Trash2, ChevronDown, ChevronUp, FileText,
-    Sparkles, RotateCcw
+    Sparkles, RotateCcw, ImageIcon
 } from 'lucide-react'
 import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
@@ -145,6 +146,13 @@ export default function ResumeBuilder() {
             TextAlign.configure({ types: ['heading', 'paragraph'] }),
             TextStyle,
             Color,
+            Image.configure({
+                inline: true,
+                allowBase64: true,
+                HTMLAttributes: {
+                    class: 'resume-image',
+                },
+            }),
         ],
         content: '<p>Your generated resume will appear here...</p>',
         editorProps: {
@@ -172,6 +180,228 @@ export default function ResumeBuilder() {
             editor.commands.setContent(htmlContent)
         }
     }, [generated, editor])
+
+    useEffect(() => {
+        if (!editor) return
+
+        let selectedImage: HTMLImageElement | null = null
+        let resizeBox: HTMLDivElement | null = null
+        let isDragging = false
+        let isResizing = false
+        let startX = 0
+        let startY = 0
+        let startWidth = 0
+        let startHeight = 0
+        let startLeft = 0
+        let startTop = 0
+        let currentHandle = ''
+
+        const handleImageClick = (e: Event) => {
+            const target = e.target as HTMLElement
+            if (target.tagName === 'IMG' && target.classList.contains('resume-image')) {
+                e.stopPropagation()
+                selectImage(target as HTMLImageElement)
+            }
+        }
+
+        const selectImage = (img: HTMLImageElement) => {
+            removeResizeBox()
+            selectedImage = img
+
+            // Make image absolutely positioned for dragging
+            if (img.style.position !== 'absolute') {
+                const rect = img.getBoundingClientRect()
+                const editorRect = img.closest('.ProseMirror')?.getBoundingClientRect()
+                if (editorRect) {
+                    img.style.position = 'absolute'
+                    img.style.left = `${rect.left - editorRect.left}px`
+                    img.style.top = `${rect.top - editorRect.top}px`
+                }
+            }
+
+            createResizeBox(img)
+        }
+
+        const createResizeBox = (img: HTMLImageElement) => {
+            resizeBox = document.createElement('div')
+            resizeBox.className = 'image-resize-box'
+            resizeBox.style.cssText = `
+                position: absolute;
+                border: 2px solid var(--primary-color);
+                pointer-events: none;
+                z-index: 1000;
+                cursor: move;
+            `
+
+            const updateBoxPosition = () => {
+                if (!img || !resizeBox) return
+                const rect = img.getBoundingClientRect()
+                const editorRect = img.closest('.ProseMirror')?.getBoundingClientRect()
+                if (!editorRect) return
+
+                resizeBox.style.left = `${rect.left - editorRect.left}px`
+                resizeBox.style.top = `${rect.top - editorRect.top}px`
+                resizeBox.style.width = `${rect.width}px`
+                resizeBox.style.height = `${rect.height}px`
+            }
+
+            // Create 8 resize handles
+            const handles = [
+                { position: 'top-left', cursor: 'nw-resize', top: '-5px', left: '-5px' },
+                { position: 'top', cursor: 'n-resize', top: '-5px', left: '50%', transform: 'translateX(-50%)' },
+                { position: 'top-right', cursor: 'ne-resize', top: '-5px', right: '-5px' },
+                { position: 'right', cursor: 'e-resize', top: '50%', right: '-5px', transform: 'translateY(-50%)' },
+                { position: 'bottom-right', cursor: 'se-resize', bottom: '-5px', right: '-5px' },
+                { position: 'bottom', cursor: 's-resize', bottom: '-5px', left: '50%', transform: 'translateX(-50%)' },
+                { position: 'bottom-left', cursor: 'sw-resize', bottom: '-5px', left: '-5px' },
+                { position: 'left', cursor: 'w-resize', top: '50%', left: '-5px', transform: 'translateY(-50%)' }
+            ]
+
+            handles.forEach(({ position, cursor, ...styles }) => {
+                const handle = document.createElement('div')
+                handle.className = `resize-handle resize-handle-${position}`
+                handle.dataset.position = position
+
+                let styleString = `
+                    position: absolute;
+                    width: 10px;
+                    height: 10px;
+                    background: var(--primary-color);
+                    cursor: ${cursor};
+                    pointer-events: auto;
+                    border-radius: 2px;
+                    border: 1px solid white;
+                `
+
+                Object.entries(styles).forEach(([key, value]) => {
+                    styleString += `${key}: ${value};`
+                })
+
+                handle.style.cssText = styleString
+
+                handle.addEventListener('mousedown', (e) => {
+                    e.preventDefault()
+                    e.stopPropagation()
+                    isResizing = true
+                    currentHandle = position
+                    startX = e.clientX
+                    startY = e.clientY
+                    startWidth = img.offsetWidth
+                    startHeight = img.offsetHeight
+                    startLeft = parseFloat(img.style.left) || 0
+                    startTop = parseFloat(img.style.top) || 0
+                    document.body.style.cursor = cursor
+                })
+
+                if (resizeBox) {
+                    resizeBox.appendChild(handle)
+                }
+            })
+
+            // Add drag functionality on the box itself
+            resizeBox.style.pointerEvents = 'auto'
+            resizeBox.addEventListener('mousedown', (e) => {
+                if ((e.target as HTMLElement).classList.contains('resize-handle')) return
+                e.preventDefault()
+                e.stopPropagation()
+                isDragging = true
+                startX = e.clientX
+                startY = e.clientY
+                startLeft = parseFloat(img.style.left) || 0
+                startTop = parseFloat(img.style.top) || 0
+                document.body.style.cursor = 'move'
+            })
+
+            document.addEventListener('mousemove', (e) => {
+                if (isDragging && selectedImage) {
+                    const dx = e.clientX - startX
+                    const dy = e.clientY - startY
+                    selectedImage.style.left = `${startLeft + dx}px`
+                    selectedImage.style.top = `${startTop + dy}px`
+                    updateBoxPosition()
+                } else if (isResizing && selectedImage) {
+                    const dx = e.clientX - startX
+                    const dy = e.clientY - startY
+
+                    let newWidth = startWidth
+                    let newHeight = startHeight
+                    let newLeft = startLeft
+                    let newTop = startTop
+
+                    switch (currentHandle) {
+                        case 'right':
+                        case 'bottom-right':
+                        case 'top-right':
+                            newWidth = Math.max(50, startWidth + dx)
+                            break
+                        case 'left':
+                        case 'bottom-left':
+                        case 'top-left':
+                            newWidth = Math.max(50, startWidth - dx)
+                            newLeft = startLeft + (startWidth - newWidth)
+                            break
+                    }
+
+                    switch (currentHandle) {
+                        case 'bottom':
+                        case 'bottom-right':
+                        case 'bottom-left':
+                            newHeight = Math.max(50, startHeight + dy)
+                            break
+                        case 'top':
+                        case 'top-right':
+                        case 'top-left':
+                            newHeight = Math.max(50, startHeight - dy)
+                            newTop = startTop + (startHeight - newHeight)
+                            break
+                    }
+
+                    selectedImage.style.width = `${newWidth}px`
+                    selectedImage.style.height = `${newHeight}px`
+                    selectedImage.style.left = `${newLeft}px`
+                    selectedImage.style.top = `${newTop}px`
+                    updateBoxPosition()
+                }
+            })
+
+            document.addEventListener('mouseup', () => {
+                if (isDragging || isResizing) {
+                    isDragging = false
+                    isResizing = false
+                    currentHandle = ''
+                    document.body.style.cursor = 'default'
+                }
+            })
+
+            img.closest('.ProseMirror')?.appendChild(resizeBox)
+            updateBoxPosition()
+        }
+
+        const removeResizeBox = () => {
+            if (resizeBox) {
+                resizeBox.remove()
+                resizeBox = null
+            }
+            selectedImage = null
+        }
+
+        const handleClickOutside = (e: Event) => {
+            const target = e.target as HTMLElement
+            if (!target.closest('.image-resize-box') && !target.classList.contains('resume-image')) {
+                removeResizeBox()
+            }
+        }
+
+        const editorElement = editor.view.dom
+        editorElement.addEventListener('click', handleImageClick)
+        document.addEventListener('click', handleClickOutside)
+
+        return () => {
+            editorElement.removeEventListener('click', handleImageClick)
+            document.removeEventListener('click', handleClickOutside)
+            removeResizeBox()
+        }
+    }, [editor])
 
     const saveProfile = () => {
         localStorage.setItem('resumeProfile', JSON.stringify(profile))
@@ -427,6 +657,45 @@ export default function ResumeBuilder() {
             console.error('PDF generation failed:', error)
             alert('Failed to generate PDF. Please try again.')
         }
+    }
+
+    const addImage = () => {
+        const url = prompt('Enter image URL:')
+        if (url) {
+            editor?.chain().focus().setImage({ src: url }).run()
+        }
+    }
+
+    const uploadImage = () => {
+        const input = document.createElement('input')
+        input.type = 'file'
+        input.accept = 'image/*'
+        input.onchange = (e) => {
+            const file = (e.target as HTMLInputElement).files?.[0]
+            if (file) {
+                const reader = new FileReader()
+                reader.onload = (event) => {
+                    const src = event.target?.result as string
+                    const width = prompt('Enter image width in pixels (leave empty for 200px default):', '200')
+                    const widthValue = width && !isNaN(Number(width)) ? Number(width) : 200
+
+                    // Insert the image first
+                    editor?.chain().focus().setImage({ src, alt: file.name }).run()
+
+                    // Then update the HTML attributes via DOM manipulation
+                    setTimeout(() => {
+                        const images = document.querySelectorAll('.ProseMirror img.resume-image')
+                        const lastImage = images[images.length - 1] as HTMLImageElement
+                        if (lastImage) {
+                            lastImage.style.width = `${widthValue}px`
+                            lastImage.style.height = 'auto'
+                        }
+                    }, 100)
+                }
+                reader.readAsDataURL(file)
+            }
+        }
+        input.click()
     }
 
     return (
@@ -935,6 +1204,15 @@ export default function ResumeBuilder() {
                         title="Bullet List"
                     >
                         <List size={18} />
+                    </button>
+                    <div style={{ width: '1px', backgroundColor: 'var(--border)', margin: '0 0.25rem' }} />
+                    <button
+                        onClick={uploadImage}
+                        disabled={!editor}
+                        className="secondary icon-only"
+                        title="Insert Image"
+                    >
+                        <ImageIcon size={18} />
                     </button>
                     <div style={{ width: '1px', backgroundColor: 'var(--border)', margin: '0 0.25rem' }} />
                     <button

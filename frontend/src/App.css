@@ -52,6 +52,40 @@ button.active {
   border-color: var(--primary-color) !important;
 }
 
+/* Image styling */
+.ProseMirror {
+  position: relative;
+}
+
+.ProseMirror img.resume-image {
+  max-width: 100%;
+  height: auto;
+  cursor: pointer;
+  border: 2px solid transparent;
+  border-radius: 4px;
+  transition: border-color 0.2s ease;
+  display: inline-block;
+}
+
+.ProseMirror img.resume-image:hover {
+  border-color: var(--primary-color);
+}
+
+.ProseMirror img.resume-image.ProseMirror-selectednode {
+  border-color: var(--primary-color);
+  outline: none;
+}
+
+.image-resize-box {
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.3);
+  border-radius: 4px;
+}
+
+.resize-handle:hover {
+  background: var(--primary-hover) !important;
+  transform: scale(1.2);
+}
+
 /* Custom scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
